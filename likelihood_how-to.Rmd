@@ -1,0 +1,128 @@
+---
+title: "Notes on likelihood"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+par(bg = 'black', fg = 'white', col.axis = 'white', col.lab = 'white', 
+    col.main = 'white')
+```
+
+Here we document how to work with likelihoods.
+
+First let's read in the data we generated from the multi-species competitive model.
+
+```{r sad-data}
+x <- readRDS('lvMultiSim.Rds')
+plot(sort(x, decreasing = TRUE), log = 'y', 
+     xlab = 'Species rank', ylab = 'Abundance')
+```
+
+We're going to fit the log-series distribution to the data. Here we make a *function* to compute the log-series.
+
+
+```{r logseries-eq}
+lseries <- function(b, n) {
+    1 / log(1 / (1 - exp(-b))) * exp(-b * n) / n
+}
+
+hist(x, probability = TRUE)
+
+points(1:50, lseries(0.1, 1:50), col = 'red', type = 'b')
+points(1:50, lseries(0.5, 1:50), col = 'orange', type = 'b')
+points(1:50, lseries(0.01, 1:50), col = 'blue', type = 'b')
+```
+
+
+A likelihood is simply the probability of observing the data.  Because these probabilities are typically very small, we most often work in log transformed probability, or *log likelihood*.
+
+```{r likelihood-intro}
+sum(log(lseries(0.001, x)))
+sum(log(lseries(0.01, x)))
+sum(log(lseries(0.5, x)))
+```
+
+
+```{r ll-curve, echo = FALSE}
+bb <- seq(0.001, 0.1, length.out = 50)
+ll <- sapply(bb, function(b) sum(log(lseries(b, x))))
+
+pdf('fig_ll.pdf', width = 4, height = 4)
+par(bg = 'black', fg = 'white', col.axis = 'white', col.lab = 'white')
+plot(bb, ll, xlab = 'b parameter', ylab = 'log likelihood')
+dev.off()
+```
+
+
+Fitting the model to the data precisely means finding the parameter value that maximizes the likelihood function.
+
+```{r maxloglik}
+llLSeries <- function(b, n) {
+    sum(log(lseries(b, n)))
+}
+
+
+optimize(llLSeries, interval = c(0, 10), n = x, maximum = TRUE)
+```
+
+We can did all that likelihood by hand, but we can also use the pika package
+
+```{r pika}
+# devtools::install_github('ajrominger/pika')
+
+library(pika)
+s <- sad(x, 'lseries')
+s
+logLik(s)
+```
+
+The pika package let's us do nicer plots, and calculate a z-statistic, which is a goodness of fit measure.
+
+```{r pika-fun}
+plot(s, ptype = 'rad')
+logLikZ(s)
+
+pchisq(3.33, df = 1, lower.tail = FALSE)
+```
+
+
+```{r llz, eval = FALSE, echo = FALSE}
+pdf('fig_lseriesSAD.pdf', width = 4, height = 4)
+par(bg = 'black', fg = 'white', col.axis = 'white', col.lab = 'white')
+plot(s, ptype = 'rad', thr.col = 'magenta')
+dev.off()
+
+pdf('fig_lseriesPerf.pdf', width = 4, height = 4)
+par(bg = 'black', fg = 'white', col.axis = 'white', col.lab = 'white')
+plot(sad(rlseries(s$nobs, s$MLE), 'lseries'), ptype = 'rad', thr.col = 'white')
+dev.off()
+
+
+llDist <- replicate(1000, sad(rlseries(s$nobs, s$MLE), 'lseries')$ll)
+pdf('fig_llDist.pdf', width = 6, height = 4)
+par(bg = 'black', fg = 'white', col.axis = 'white', col.lab = 'white')
+curve(dnorm(x, mean = mean(llDist), sd = sd(llDist)), 
+      from = -230, to = -130, yaxt = 'n', 
+      xlab = 'log likelihood', ylab = '', lwd = 3)
+dev.off()
+```
+
+Model comparison necessitates that we penalize models for their complexity (i.e. number of parameters). We do this with AIC
+
+```{r model-comp}
+ls <- sad(x, 'lseries')
+ln <- sad(x, 'plnorm')
+nb <- sad(x, 'tnegb')
+
+AIC(ls)
+AIC(ln)
+AIC(nb)
+
+plot(ls, ptype = 'rad', log = 'y', main = 'logseries')
+plot(ln, ptype = 'rad', log = 'y', main = 'lognormal')
+plot(nb, ptype = 'rad', log = 'y', main = 'negbinom')
+
+logLikZ(ls)
+logLikZ(nb)
+```
