@@ -181,10 +181,10 @@ library(roleR)
 
 p <- untbParams(1000, 100000, 200, 0.01, 0.1, 'oceanic_island', 
                 50000, 50000)
-y <- roleModel(p)
-y <- iterModel(y)
-y <- getFinalState(y)
-y <- getSumStats(y, list(abund = rawAbundance))
+neutMod <- roleModel(p)
+neutMod <- iterModel(neutMod)
+neutModFin <- getFinalState(neutMod)
+y <- getSumStats(neutModFin, list(abund = rawAbundance))
 y <- y$abund$abund
 y <- y[y > 0]
 
@@ -198,4 +198,4 @@ plot(untbNB, ptype = 'rad', log = 'y')
 logLikZ(untbNB)
 ```
 
-    ## [1] 0.007566351
+    ## [1] 0.000393621
