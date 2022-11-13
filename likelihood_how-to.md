@@ -173,3 +173,29 @@ logLikZ(nb)
 ```
 
     ## [1] 2.101964e-08
+
+Let’s see if output from a neutral model looks any different
+
+``` r
+library(roleR)
+
+p <- untbParams(1000, 100000, 200, 0.01, 0.1, 'oceanic_island', 
+                50000, 50000)
+y <- roleModel(p)
+y <- iterModel(y)
+y <- getFinalState(y)
+y <- getSumStats(y, list(abund = rawAbundance))
+y <- y$abund$abund
+y <- y[y > 0]
+
+untbNB <- sad(y, 'tnegb')
+plot(untbNB, ptype = 'rad', log = 'y')
+```
+
+![](likelihood_how-to_files/figure-gfm/neutral-1.png)<!-- -->
+
+``` r
+logLikZ(untbNB)
+```
+
+    ## [1] 0.007566351

@@ -126,3 +126,22 @@ plot(nb, ptype = 'rad', log = 'y', main = 'negbinom')
 logLikZ(ls)
 logLikZ(nb)
 ```
+
+Let's see if output from a neutral model looks any different
+
+```{r neutral}
+library(roleR)
+
+p <- untbParams(1000, 100000, 200, 0.01, 0.1, 'oceanic_island', 
+                50000, 50000)
+y <- roleModel(p)
+y <- iterModel(y)
+y <- getFinalState(y)
+y <- getSumStats(y, list(abund = rawAbundance))
+y <- y$abund$abund
+y <- y[y > 0]
+
+untbNB <- sad(y, 'tnegb')
+plot(untbNB, ptype = 'rad', log = 'y')
+logLikZ(untbNB)
+```
