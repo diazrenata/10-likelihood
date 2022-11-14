@@ -69,10 +69,10 @@ optimize(llLSeries, interval = c(0, 10), n = x, maximum = TRUE)
 We can did all that likelihood by hand, but we can also use the pika package
 
 ```{r pika}
-# devtools::install_github('ajrominger/pika')
+#devtools::install_github('ajrominger/pika')
 
 library(pika)
-s <- sad(x, 'lseries')
+s <- pika::sad(x, 'lseries')
 s
 logLik(s)
 ```
